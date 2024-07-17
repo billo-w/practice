@@ -10,35 +10,31 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+    - name: Checkout code
+      uses: actions/checkout@v3
 
-      - name: Run Bash script tests
-        run: |
-          chmod +x ./myscript && ./myscript
-        
+    - name: Run Bash script tests
+      run: |
+        chmod +x ./myscript.sh &&  ./myscript.sh
+
   deploy:
     runs-on: ubuntu-latest
     needs: test
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+    - name: Checkout code
+      uses: actions/checkout@v4
 
-      - name: Setup SSH
-        uses: webfactory/ssh-agent@v0.5.3
-        with:
-          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+    - name: Debug SSH connection
+      run: |
+        echo "${{ secrets.SSH_PRIVATE_KEY }}" > private_key
+        chmod 600 private_key
+        ssh -i private_key -o StrictHostKeyChecking=no -p ${{ secrets.PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "echo 'SSH Connection Successful'"
 
-      - name: Copy files to VM
-        uses: appleboy/scp-action@master
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USERNAME }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: "."
-          target: "/home/ec2-user"
+    - name: Copy files to VM
+      run: |
+        scp -i private_key -o StrictHostKeyChecking=no -P ${{ secrets.PORT }} myscript.sh ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }}:/ec2-user
 
-      - name: Run script on remote server
-        run: |
-          ssh -o StrictHostKeyChecking=no -i ~/.ssh/github-actions ec2-user@${{ secrets.SSH_HOST }} 'bash /home/ec2-user/myscript'
+    - name: Run script on remote server
+      run: |
+        ssh -i private_key -o StrictHostKeyChecking=no -p ${{ secrets.PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} 'sh /ec2-user/myscript.sh'
