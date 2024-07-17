@@ -27,8 +27,8 @@ jobs:
 
     - name: Copy files to VM
       run: |
-        scp -i private_key -o StrictHostKeyChecking=no -P ${{ secrets.PORT }} myscript ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }}:/ec2-user
+        scp -i id_rsa -o StrictHostKeyChecking=no -P ${{ secrets.PORT }} myscript ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }}:/ec2-user
 
     - name: Run script on remote server
       run: |
-        ssh -i private_key -o StrictHostKeyChecking=no -p ${{ secrets.PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} 'sh /ec2-user/myscript'
+        ssh -i id_rsa -o StrictHostKeyChecking=no -p ${{ secrets.PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} 'sh /ec2-user/myscript'
