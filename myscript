@@ -1,7 +1,6 @@
 #!/bin/bash
 
 # Variables
-REPO_URL="https://github.com/billo-w/practice"
 WEB_DIR="/var/www/html"
 
 # Update and upgrade the system
@@ -23,7 +22,7 @@ sudo mysql_secure_installation
 # Install PHP and required extensions
 sudo apt install php-fpm php-mysql -y
 
-# Install Git
+# Install Git (optional, can be removed if not needed)
 sudo apt install git -y
 
 # Configure Nginx to use PHP processor
@@ -56,14 +55,27 @@ EOL
 sudo nginx -t
 sudo systemctl reload nginx
 
-# Deploy the website
+# Deploy a simple website
 if [ -d "$WEB_DIR" ]; then
     sudo rm -rf $WEB_DIR/*
 else
     sudo mkdir -p $WEB_DIR
 fi
 
-sudo git clone $REPO_URL $WEB_DIR
+# Create a simple PHP file
+sudo tee $WEB_DIR/index.php > /dev/null <<EOL
+<!DOCTYPE html>
+<html>
+<head>
+    <title>LEMP Stack</title>
+</head>
+<body>
+    <h1>Welcome to the LEMP Stack!</h1>
+    <p>This page is served by Nginx and PHP is working correctly.</p>
+    <p>Current date and time: <?php echo date('Y-m-d H:i:s'); ?></p>
+</body>
+</html>
+EOL
 
 # Set proper permissions
 sudo chown -R www-data:www-data $WEB_DIR
