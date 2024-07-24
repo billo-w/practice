@@ -1,121 +1,119 @@
 #!/bin/bash
 
-# Variables
-WEB_DIR="/var/www/html"
-
-# Update and upgrade the system
-sudo yum update -y
+# Update the system
+yum update -y
 
 # Install Nginx
-sudo yum install nginx -y
+yum install -y nginx
 
 # Start and enable Nginx
-sudo systemctl start nginx
-sudo systemctl enable nginx
+systemctl start nginx
+systemctl enable nginx
 
-# Install MariaDB (MySQL replacement)
-sudo yum install mariadb-server -y
+# Install MySQL
+# Add the MySQL repository
+cat <<EOF > /etc/yum.repos.d/mysql-community.repo
+[mysql57-community]
+name=MySQL 5.7 Community Server
+baseurl=https://repo.mysql.com/yum/mysql-5.7-community/el/7/\$basearch/
+enabled=1
+gpgcheck=1
+gpgkey=https://repo.mysql.com/RPM-GPG-KEY-mysql
+EOF
 
-# Start and enable MariaDB
-sudo systemctl start mariadb
-sudo systemctl enable mariadb
+# Install MySQL Server
+yum install -y mysql-community-server
 
-# Secure MariaDB installation
-sudo mysql_secure_installation
+# Start and enable MySQL
+systemctl start mysqld
+systemctl enable mysqld
 
-# Install PHP and required extensions
-sudo yum install php php-mysqlnd -y
+# Retrieve temporary MySQL root password
+TEMP_PASSWORD=$(grep 'temporary password' /var/log/mysqld.log | awk '{print $NF}')
 
-# Install Git
-sudo yum install git -y
+# Secure MySQL installation
+mysql_secure_installation <<EOF
 
-# Configure Nginx to use PHP processor
-sudo tee /etc/nginx/conf.d/default.conf > /dev/null <<EOL
-server {
-    listen 80 default_server;
-    listen [::]:80 default_server;
+y
+$TEMP_PASSWORD
+new_root_password
+new_root_password
+y
+y
+y
+y
+EOF
 
-    root /var/www/html;
-    index index.php index.html index.htm;
+# Create a directory for the website
+mkdir -p /usr/share/nginx/html/website
 
-    server_name _;
-
-    location / {
-        try_files \$uri \$uri/ =404;
-    }
-
-    location ~ \.php\$ {
-        include fastcgi_params;
-        fastcgi_pass unix:/run/php-fpm/www.sock;
-        fastcgi_index index.php;
-        fastcgi_param SCRIPT_FILENAME \$document_root\$fastcgi_script_name;
-    }
-
-    location ~ /\.ht {
-        deny all;
-    }
-}
-EOL
-
-# Test the Nginx configuration and reload
-sudo nginx -t
-sudo systemctl reload nginx
-
-# Deploy a simple website
-if [ -d "$WEB_DIR" ]; then
-    sudo rm -rf $WEB_DIR/*
-else
-    sudo mkdir -p $WEB_DIR
-fi
-
-# Create a simple PHP file
-sudo tee $WEB_DIR/index.php > /dev/null <<EOL
+# Create a sample HTML file
+cat <<EOF > /usr/share/nginx/html/website/index.html
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>LEMP Stack</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome to My Website</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+            text-align: center;
+            color: #333;
+        }
+        header {
+            background: #333;
+            color: #fff;
+            padding: 1em 0;
+        }
+        main {
+            padding: 2em;
+        }
+        footer {
+            background: #333;
+            color: #fff;
+            padding: 1em 0;
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+        }
+    </style>
 </head>
 <body>
-    <h1>Welcome to the LEMP Stack!</h1>
-    <p>This page is served by Nginx and PHP is working correctly.</p>
-    <p>Current date and time: <?php echo date('Y-m-d H:i:s'); ?></p>
+    <header>
+        <h1>Welcome to My Website</h1>
+    </header>
+    <main>
+        <h2>Hello, World!</h2>
+        <p>This is a simple HTML website hosted on Nginx with Amazon Linux 2.</p>
+    </main>
+    <footer>
+        <p>&copy; 2024 My Website</p>
+    </footer>
 </body>
 </html>
-EOL
+EOF
 
-# Set proper permissions
-sudo chown -R nginx:nginx $WEB_DIR
-sudo chmod -R 755 $WEB_DIR
+# Configure Nginx to serve the static HTML website
+cat <<EOF > /etc/nginx/conf.d/default.conf
+server {
+    listen       80;
+    server_name  localhost;
 
-# Check installation
-echo "Checking installations..."
+    location / {
+        root   /usr/share/nginx/html/website;
+        index  index.html;
+    }
+}
+EOF
 
-# Check Nginx
-if nginx -v 2>&1 | grep -q "nginx"; then
-    echo "Nginx is installed."
-else
-    echo "Nginx is NOT installed."
-fi
+# Restart Nginx to apply the configuration
+systemctl restart nginx
 
-# Check MariaDB
-if mysql --version 2>&1 | grep -q "mysql"; then
-    echo "MariaDB is installed."
-else
-    echo "MariaDB is NOT installed."
-fi
+# Print the MySQL root password
+echo "MySQL root password is 'new_root_password'. Please change it to a secure password."
 
-# Check PHP
-if php -v 2>&1 | grep -q "PHP"; then
-    echo "PHP is installed."
-else
-    echo "PHP is NOT installed."
-fi
-
-# Check Git
-if git --version 2>&1 | grep -q "git"; then
-    echo "Git is installed."
-else
-    echo "Git is NOT installed."
-fi
-
-echo "LEMP stack installation and website deployment check complete."
+echo "Website deployed successfully. Access it via the EC2 instance's public IP address."
