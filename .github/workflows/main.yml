@@ -15,7 +15,8 @@ jobs:
 
     - name: Run Bash script tests
       run: |
-        chmod +x ./myscript &&  ./myscript
+        chmod +x ./myscript
+        ./myscript
 
   deploy:
     runs-on: ubuntu-latest
@@ -23,7 +24,7 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v3
 
     - name: Debug SSH connection
       run: |
@@ -37,4 +38,4 @@ jobs:
 
     - name: Run script on remote server
       run: |
-        ssh -i private_key -o StrictHostKeyChecking=no -p ${{ secrets.PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} 'sh /home/ec2-user/myscript'
+        ssh -i private_key -o StrictHostKeyChecking=no -p ${{ secrets.PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} 'bash /home/ec2-user/myscript'
