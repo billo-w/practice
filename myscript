@@ -1,60 +1,52 @@
 #!/bin/bash
 
-set -e
+# Update and upgrade the system
+sudo apt update && sudo apt upgrade -y
 
-# update/upgrade system
-apt update -y && apt upgrade -y
+# Install Nginx
+sudo apt install nginx -y
 
-# install nginx, MySQL, php
-apt install -y nginx mysql-server php-fpm php-mysql
+# Start and enable Nginx
+sudo systemctl start nginx
+sudo systemctl enable nginx
 
-# start everything
-systemctl start nginx
-systemctl start mysql
-systemctl start php7.4-fpm
+# Install MySQL
+sudo apt install mysql-server -y
 
-# enable everything (will start after reboot)
-systemctl enable nginx
-systemctl enable mysql
-systemctl enable php7.4-fpm
+# Secure MySQL installation (You may need to run this interactively or automate it using expect script)
+sudo mysql_secure_installation
 
-# Secure MySQL installation
-# Note: Adjust these variables as needed
-MYSQL_ROOT_PASSWORD="pa55word"
-mysql -e "ALTER USER 'root'@'localhost' IDENTIFIED WITH 'mysql_native_password' BY '${MYSQL_ROOT_PASSWORD}';"
-mysql -e "DELETE FROM mysql.user WHERE User='';"
-mysql -e "DROP DATABASE IF EXISTS test;"
-mysql -e "DELETE FROM mysql.db WHERE Db='test' OR Db='test\\_%';"
-mysql -e "FLUSH PRIVILEGES;"
+# Install PHP and required extensions
+sudo apt install php-fpm php-mysql -y
 
-# nginx config (php not done before, c+p chat, placeholders for server/domain)
-cat <<EOT > /etc/nginx/sites-available/default
+# Configure Nginx to use PHP processor
+sudo tee /etc/nginx/sites-available/default > /dev/null <<EOL
 server {
-    listen 80;
-    server_name your_domain_or_ip;
+    listen 80 default_server;
+    listen [::]:80 default_server;
 
     root /var/www/html;
-    index index.php index.html;
+    index index.php index.html index.htm;
+
+    server_name _;
 
     location / {
         try_files \$uri \$uri/ =404;
     }
 
-    location ~ \.php$ {
+    location ~ \.php\$ {
         include snippets/fastcgi-php.conf;
-        fastcgi_pass unix:/var/run/php/php7.4-fpm.sock;
+        fastcgi_pass unix:/run/php/php7.4-fpm.sock;
+    }
+
+    location ~ /\.ht {
+        deny all;
     }
 }
-EOT
+EOL
 
-# edit index page
-echo "<h1>Great Success!</h1>" > /var/www/html/index.html
+# Test the Nginx configuration and reload
+sudo nginx -t
+sudo systemctl reload nginx
 
-# nginx restart
-systemctl restart nginx
-
-# Create a test PHP file (not done before, c+p from chat)
-echo "<?php phpinfo(); ?>" > /var/www/html/info.php
-
-echo "LEMP stack installation completed. You legend"
-
+echo "LEMP stack installed successfully!"
