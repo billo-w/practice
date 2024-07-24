@@ -4,29 +4,34 @@
 WEB_DIR="/var/www/html"
 
 # Update and upgrade the system
-sudo apt update && sudo apt upgrade -y
+sudo yum update -y
 
 # Install Nginx
-sudo apt install nginx -y
+sudo amazon-linux-extras install nginx1 -y
 
 # Start and enable Nginx
 sudo systemctl start nginx
 sudo systemctl enable nginx
 
-# Install MySQL
-sudo apt install mysql-server -y
+# Install MariaDB (MySQL replacement for Amazon Linux)
+sudo yum install mariadb-server -y
 
-# Secure MySQL installation (You may need to run this interactively or automate it using expect script)
+# Start and enable MariaDB
+sudo systemctl start mariadb
+sudo systemctl enable mariadb
+
+# Secure MariaDB installation
 sudo mysql_secure_installation
 
 # Install PHP and required extensions
-sudo apt install php-fpm php-mysql -y
+sudo amazon-linux-extras install php7.4 -y
+sudo yum install php-mysqlnd -y
 
-# Install Git (optional, can be removed if not needed)
-sudo apt install git -y
+# Install Git
+sudo yum install git -y
 
 # Configure Nginx to use PHP processor
-sudo tee /etc/nginx/sites-available/default > /dev/null <<EOL
+sudo tee /etc/nginx/conf.d/default.conf > /dev/null <<EOL
 server {
     listen 80 default_server;
     listen [::]:80 default_server;
@@ -41,8 +46,10 @@ server {
     }
 
     location ~ \.php\$ {
-        include snippets/fastcgi-php.conf;
-        fastcgi_pass unix:/run/php/php7.4-fpm.sock;
+        include fastcgi_params;
+        fastcgi_pass unix:/run/php-fpm/www.sock;
+        fastcgi_index index.php;
+        fastcgi_param SCRIPT_FILENAME \$document_root\$fastcgi_script_name;
     }
 
     location ~ /\.ht {
@@ -78,7 +85,7 @@ sudo tee $WEB_DIR/index.php > /dev/null <<EOL
 EOL
 
 # Set proper permissions
-sudo chown -R www-data:www-data $WEB_DIR
+sudo chown -R nginx:nginx $WEB_DIR
 sudo chmod -R 755 $WEB_DIR
 
 # Check installation
@@ -91,11 +98,11 @@ else
     echo "Nginx is NOT installed."
 fi
 
-# Check MySQL
+# Check MariaDB
 if mysql --version 2>&1 | grep -q "mysql"; then
-    echo "MySQL is installed."
+    echo "MariaDB is installed."
 else
-    echo "MySQL is NOT installed."
+    echo "MariaDB is NOT installed."
 fi
 
 # Check PHP
@@ -103,6 +110,13 @@ if php -v 2>&1 | grep -q "PHP"; then
     echo "PHP is installed."
 else
     echo "PHP is NOT installed."
+fi
+
+# Check Git
+if git --version 2>&1 | grep -q "git"; then
+    echo "Git is installed."
+else
+    echo "Git is NOT installed."
 fi
 
 echo "LEMP stack installation and website deployment check complete."
