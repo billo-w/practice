@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Variables
-REPO_URL="https://github.com/yourusername/yourrepository.git"
+REPO_URL="https://github.com/billo-w/practice"
 WEB_DIR="/var/www/html"
 
 # Update and upgrade the system
@@ -22,6 +22,9 @@ sudo mysql_secure_installation
 
 # Install PHP and required extensions
 sudo apt install php-fpm php-mysql -y
+
+# Install Git
+sudo apt install git -y
 
 # Configure Nginx to use PHP processor
 sudo tee /etc/nginx/sites-available/default > /dev/null <<EOL
