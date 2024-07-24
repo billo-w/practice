@@ -7,13 +7,13 @@ WEB_DIR="/var/www/html"
 sudo yum update -y
 
 # Install Nginx
-sudo amazon-linux-extras install nginx1 -y
+sudo yum install nginx -y
 
 # Start and enable Nginx
 sudo systemctl start nginx
 sudo systemctl enable nginx
 
-# Install MariaDB (MySQL replacement for Amazon Linux)
+# Install MariaDB (MySQL replacement)
 sudo yum install mariadb-server -y
 
 # Start and enable MariaDB
@@ -24,8 +24,7 @@ sudo systemctl enable mariadb
 sudo mysql_secure_installation
 
 # Install PHP and required extensions
-sudo amazon-linux-extras install php7.4 -y
-sudo yum install php-mysqlnd -y
+sudo yum install php php-mysqlnd -y
 
 # Install Git
 sudo yum install git -y
