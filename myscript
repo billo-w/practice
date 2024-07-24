@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# Variables
+REPO_URL="https://github.com/yourusername/yourrepository.git"
+WEB_DIR="/var/www/html"
+
 # Update and upgrade the system
 sudo apt update && sudo apt upgrade -y
 
@@ -49,4 +53,41 @@ EOL
 sudo nginx -t
 sudo systemctl reload nginx
 
-echo "LEMP stack installed successfully!"
+# Deploy the website
+if [ -d "$WEB_DIR" ]; then
+    sudo rm -rf $WEB_DIR/*
+else
+    sudo mkdir -p $WEB_DIR
+fi
+
+sudo git clone $REPO_URL $WEB_DIR
+
+# Set proper permissions
+sudo chown -R www-data:www-data $WEB_DIR
+sudo chmod -R 755 $WEB_DIR
+
+# Check installation
+echo "Checking installations..."
+
+# Check Nginx
+if nginx -v 2>&1 | grep -q "nginx"; then
+    echo "Nginx is installed."
+else
+    echo "Nginx is NOT installed."
+fi
+
+# Check MySQL
+if mysql --version 2>&1 | grep -q "mysql"; then
+    echo "MySQL is installed."
+else
+    echo "MySQL is NOT installed."
+fi
+
+# Check PHP
+if php -v 2>&1 | grep -q "PHP"; then
+    echo "PHP is installed."
+else
+    echo "PHP is NOT installed."
+fi
+
+echo "LEMP stack installation and website deployment check complete."
